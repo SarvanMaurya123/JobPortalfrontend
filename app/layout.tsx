@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Header from "@/app/allpages/header/page";
+import Footer from "@/app/allpages/footer/page";
+import ReduxProvider from "./providers/ReduxProvider";
+import { Toaster } from "@/components/ui/sonner"
+import { PersistGate } from "redux-persist/integration/react";
+import { persistor } from "./store";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,7 +33,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+
+        <ReduxProvider>
+          <Header />
+          {children}
+          <Footer />
+          <Toaster />
+        </ReduxProvider>
       </body>
     </html>
   );
