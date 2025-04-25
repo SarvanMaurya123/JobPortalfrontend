@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
@@ -10,15 +10,35 @@ import Link from "next/link";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/app/redux/hooks";
-import { logout } from "@/app/store/slices/authSlice";
 import { toast } from "sonner"
+import { isTokenExpired } from "@/app/lib/checkToken";
+import { logout } from "@/app/store/slices/authSlice";
+import { employerlogout } from "@/app/store/slices/employerSlice";
+import { RootState } from "@/app/store";
+
 export default function Header() {
     const [userType, setUserType] = useState("/register/jobseekar");
     const dispatch = useAppDispatch();
     const [isDialogOpen, setIsDialogOpen] = useState(false); // ✅ Dialog state
 
     const router = useRouter(); // ✅ Next.js Router
-    const isAuthenticated = useAppSelector((state) => state.auth.user); // adjust based on your store
+
+    const employer = useAppSelector((state: RootState) => state.authemployer.employer);
+    const user = useAppSelector((state) => state.auth.user);
+    const userToken = useAppSelector((state) => state.auth.token);
+    const employerToken = useAppSelector((state) => state.authemployer.token);
+    const token = userToken || employerToken;
+
+    const isAuthenticated = !!token && (user?.role || employer?.role) && !isTokenExpired(token);
+
+    useEffect(() => {
+        if (!token) {
+            if (user) dispatch(logout());
+            if (employer) dispatch(employerlogout());
+            router.push("/login");
+        }
+    }, [token, user, employer, dispatch, router]);
+
 
     // Function to handle continue button click
     const handleContinue = () => {
@@ -32,22 +52,33 @@ export default function Header() {
 
     const handleLogout = async () => {
         try {
-            await dispatch(logout()).unwrap(); // wait for logout to complete
+            if (user) {
+                await dispatch(logout()).unwrap();
+            } else if (employer) {
+                await dispatch(employerlogout()).unwrap();
+            } else {
+                toast.error("No user or employer is currently logged in.");
+                return;
+            }
+
             router.push("/login");
             toast.success("Logout success");
-        } catch (error) {
+        } catch (error: unknown) {
+            console.error(error);
             toast.error("Logout failed");
         }
     };
+
 
     return (
         <header className="bg-gray-900 w-full sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
                     {/* Logo */}
+
                     <div className="flex items-center">
                         <Link href="/" className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-green-500 flex items-center justify-center">
+                            <div className="h-10 w-10 rounded-full bg-[#2cb67d] flex items-center justify-center">
                                 <span className="text-white font-bold text-xl">JP</span>
                             </div>
                             <h1 className="text-xl font-bold text-white hidden sm:block">Job Portal</h1>
@@ -134,12 +165,12 @@ export default function Header() {
                     </nav>
 
                     <div className="hidden md:flex items-center gap-3">
-                        {isAuthenticated?.role ? (
+                        {isAuthenticated ? (
                             <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
                                 <Button
                                     variant="ghost"
                                     onClick={handleLogout}
-                                    className="bg-red-500 hover:bg-red-600 text-white font-medium"
+                                    className="bg-red-500 hover:bg-red-600 text-white font-medium cursor-pointer"
                                 >
                                     <LogOut size={18} className="mr-2" />
                                     Logout
@@ -149,7 +180,7 @@ export default function Header() {
                             <>
                                 {/* Login Button */}
                                 <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
-                                    <Button variant="ghost" className="bg-green-500 hover:bg-green-600 text-white font-medium">
+                                    <Button variant="ghost" className="bg-[#2cb67d] hover:bg-green-600 text-white font-medium cursor-pointer">
                                         <User size={18} className="mr-2" />
                                         <Link href="/login">Login</Link>
                                     </Button>
@@ -159,8 +190,8 @@ export default function Header() {
                                 <Dialog>
                                     <DialogTrigger asChild>
                                         <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
-                                            <Button variant="ghost" className="bg-green-500 hover:bg-green-600 text-white font-medium">
-                                                <Briefcase size={18} className="mr-2" />
+                                            <Button variant="ghost" className="bg-green-500 hover:bg-[#2cb67d] text-white font-medium cursor-pointer">
+                                                <Briefcase size={18} />
                                                 Register
                                             </Button>
                                         </motion.div>

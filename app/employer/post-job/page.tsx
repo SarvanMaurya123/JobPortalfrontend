@@ -1,6 +1,12 @@
 'use client'
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import { useAppSelector } from '@/app/redux/hooks';
+import { RootState } from '@/app/store';
+import { toast } from 'sonner';
+import axios from 'axios';
+import urlemployer from '@/app/lib/employer';
 
 interface JobData {
     title: string;
@@ -45,8 +51,18 @@ export default function PostJobs() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
 
+    const router = useRouter()
+    const user = useAppSelector((state: RootState) => state.auth.user)
+    const employer = useAppSelector((state: RootState) => state.authemployer.employer)
+    const token = useAppSelector((state: RootState) => state.authemployer.token)
+
+    if (user?.id) {
+        router.push("/")// redirect to login page
+        return toast.message("this page is for employer only")
+    }
+
     const employmentTypes = ['Full-time', 'Part-time', 'Contract', 'Temporary', 'Internship', 'Remote'];
-    const experienceLevels = ['Entry-level', 'Mid-level', 'Senior', 'Manager', 'Director', 'Executive'];
+    const experienceLevels = ['Entry-level', 'Mid-level', 'Senior', 'Manager', 'Director', 'Executive', "Internship"];
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -88,17 +104,32 @@ export default function PostJobs() {
 
         try {
             // Simulate API call with timeout
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            await new Promise((resolve) => setTimeout(resolve, 1500));
 
-            // This is where you would make your actual API call
-            // const response = await fetch('/api/jobs', {
-            //   method: 'POST',
-            //   headers: { 'Content-Type': 'application/json' },
-            //   body: JSON.stringify(jobData)
-            // });
+            // Build the payload to match the backend schema
+            const payload = {
+                employer_id: employer?.id, // ensure this returns a number
+                title: jobData.title, // from your state
+                company: jobData.company,
+                location: jobData.location,
+                employment_type: jobData.employmentType, // map to snake_case expected by backend
+                experience_level: jobData.experienceLevel,
+                salary: jobData.salary,
+                description: jobData.description,
+                requirements: jobData.requirements,
+                benefits: jobData.benefits,
+                application_deadline: jobData.applicationDeadline, // should be a valid date string in the future
+                contact_email: jobData.contactEmail
+            };
 
-            // if (!response.ok) throw new Error('Failed to post job');
-
+            // Make the API POST request with the full payload
+            const response = await axios.post(`${urlemployer}/jobs`, payload, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (!response.status) throw new Error('Failed to post job');
             setSuccessMessage('Job posted successfully!');
 
             // Reset form after successful submission
@@ -115,15 +146,14 @@ export default function PostJobs() {
                 applicationDeadline: '',
                 contactEmail: ''
             });
-
+            toast.success("New Job Created Successfully")
+            router.push("/employer/dashboard")
         } catch (error) {
-            console.error('Failed to post job. Please try again.', error)
-            //setErrors({ submit: error.message || 'Failed to post job. Please try again.' });
+            console.error('Failed to post job. Please try again.', error);
         } finally {
             setIsSubmitting(false);
         }
     };
-
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -135,8 +165,8 @@ export default function PostJobs() {
                 animate={{ y: 0 }}
                 className="mb-8"
             >
-                <h1 className="text-3xl font-bold text-gray-800 mb-2">Post a New Job</h1>
-                <p className="text-gray-600">Complete the form below to create a new job listing</p>
+                <h1 className="text-3xl font-bold text-gray-800 mb-2 text-center">Create a New Job</h1>
+                <p className="text-gray-600 text-center">Complete the form below to create a new job listing</p>
             </motion.div>
 
             {successMessage && (
@@ -170,6 +200,7 @@ export default function PostJobs() {
                             onChange={handleChange}
                             className={`w-full p-3 border rounded-md ${errors.title ? 'border-red-500' : 'border-gray-300'}`}
                             placeholder="e.g. Frontend Developer"
+                            required
                         />
                         {errors.title && <p className="mt-1 text-sm text-red-500">{errors.title}</p>}
                     </div>
@@ -187,6 +218,7 @@ export default function PostJobs() {
                             onChange={handleChange}
                             className={`w-full p-3 border rounded-md ${errors.company ? 'border-red-500' : 'border-gray-300'}`}
                             placeholder="e.g. TechCorp Inc."
+                            required
                         />
                         {errors.company && <p className="mt-1 text-sm text-red-500">{errors.company}</p>}
                     </div>
@@ -204,6 +236,7 @@ export default function PostJobs() {
                             onChange={handleChange}
                             className={`w-full p-3 border rounded-md ${errors.location ? 'border-red-500' : 'border-gray-300'}`}
                             placeholder="e.g. San Francisco, CA (or Remote)"
+                            required
                         />
                         {errors.location && <p className="mt-1 text-sm text-red-500">{errors.location}</p>}
                     </div>
@@ -219,11 +252,13 @@ export default function PostJobs() {
                             value={jobData.employmentType}
                             onChange={handleChange}
                             className="w-full p-3 border border-gray-300 rounded-md"
+                            required
                         >
                             {employmentTypes.map(type => (
                                 <option key={type} value={type}>{type}</option>
                             ))}
                         </select>
+
                     </div>
 
                     {/* Experience Level */}
@@ -237,6 +272,7 @@ export default function PostJobs() {
                             value={jobData.experienceLevel}
                             onChange={handleChange}
                             className="w-full p-3 border border-gray-300 rounded-md"
+                            required
                         >
                             {experienceLevels.map(level => (
                                 <option key={level} value={level}>{level}</option>
@@ -257,6 +293,7 @@ export default function PostJobs() {
                             onChange={handleChange}
                             className="w-full p-3 border border-gray-300 rounded-md"
                             placeholder="e.g. $80,000 - $100,000"
+                            required
                         />
                     </div>
 
@@ -272,6 +309,7 @@ export default function PostJobs() {
                             value={jobData.applicationDeadline}
                             onChange={handleChange}
                             className={`w-full p-3 border rounded-md ${errors.applicationDeadline ? 'border-red-500' : 'border-gray-300'}`}
+                            required
                         />
                         {errors.applicationDeadline && <p className="mt-1 text-sm text-red-500">{errors.applicationDeadline}</p>}
                     </div>
@@ -289,6 +327,7 @@ export default function PostJobs() {
                             onChange={handleChange}
                             className="w-full p-3 border border-gray-300 rounded-md"
                             placeholder="e.g. careers@techcorp.com"
+                            required
                         />
                     </div>
                 </div>
@@ -306,6 +345,7 @@ export default function PostJobs() {
                         rows={4}
                         className={`w-full p-3 border rounded-md ${errors.description ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Provide a detailed description of the job..."
+                        required
                     ></textarea>
                     {errors.description && <p className="mt-1 text-sm text-red-500">{errors.description}</p>}
                 </div>
@@ -323,6 +363,7 @@ export default function PostJobs() {
                         rows={4}
                         className="w-full p-3 border border-gray-300 rounded-md"
                         placeholder="List the qualifications and skills required..."
+                        required
                     ></textarea>
                     <p className="mt-1 text-xs text-gray-500">Tip: Use bullet points for better readability</p>
                 </div>
@@ -340,6 +381,7 @@ export default function PostJobs() {
                         rows={4}
                         className="w-full p-3 border border-gray-300 rounded-md"
                         placeholder="List the benefits offered with this position..."
+                        required
                     ></textarea>
                 </div>
 

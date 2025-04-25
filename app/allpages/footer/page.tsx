@@ -29,10 +29,10 @@ export default function Footer() {
                     {/* Logo */}
                     <div className="flex items-center">
                         <Link href="/" className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-green-500 flex items-center justify-center">
+                            <div className="h-10 w-10 rounded-full text-[#2cb67d] flex items-center justify-center">
                                 <span className="text-white font-bold text-xl">JP</span>
                             </div>
-                            <h1 className="text-xl font-bold text-green-600 hidden sm:block">Job Portal</h1>
+                            <h1 className="text-xl font-bold text-[#2cb67d] hidden sm:block">Job Portal</h1>
                         </Link>
                     </div>
                     <p className="text-sm text-gray-500 mt-2">
@@ -75,7 +75,7 @@ const FooterColumn = ({ title, links }: { title: string, links: string[] }) => (
         animate={{ opacity: 1 }}
         transition={{ duration: 0.7 }}
     >
-        <h2 className="text-lg font-semibold mb-3 border-b-2 border-green-500 inline-block">{title}</h2>
+        <h2 className="text-lg font-semibold mb-3  text-[#2cb67d] inline-block">{title}</h2>
         <ul className="text-md text-gray-600 space-y-2">
             {links.map((link, index) => (
                 <motion.li key={index} whileHover={{ scale: 1.05, x: 5 }}>
@@ -88,7 +88,7 @@ const FooterColumn = ({ title, links }: { title: string, links: string[] }) => (
 
 const SocialIcon = ({ link, Icon }: { link: string; Icon: React.ElementType }) => (
     <motion.div whileHover={{ scale: 1.2 }}>
-        <Link href={link} className="bg-green-500 text-white p-2 rounded-full flex items-center justify-center">
+        <Link href={link} className="text-[#2cb67d] text-white p-2 rounded-full flex items-center justify-center">
             <Icon size={18} />
         </Link>
     </motion.div>

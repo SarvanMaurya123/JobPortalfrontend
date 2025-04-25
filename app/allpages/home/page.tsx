@@ -80,7 +80,7 @@ export default function HeroSection() {
 
                     {/* Search Button */}
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                        <Button className="bg-green-600 text-white px-8 py-3 text-lg flex items-center gap-2 rounded-xl">
+                        <Button className="bg-[#2cb67d] text-white px-8 py-3 text-lg flex items-center gap-2 rounded-xl">
                             <Search size={20} /> Search
                         </Button>
                     </motion.div>
@@ -91,8 +91,8 @@ export default function HeroSection() {
                     {["Software Engineer", "Data Analyst", "UX Designer", "Remote"].map((job, index) => (
                         <span
                             key={index}
-                            className="text-lg bg-green-500 bg-opacity-20 px-5 py-2 rounded-full backdrop-blur-md cursor-pointer transition-all duration-300 transform
-                hover:scale-110 hover:bg-opacity-30 hover:text-green-700 hover:shadow-lg"
+                            className="text-lg bg-[#2cb67d] bg-opacity-20 px-5 py-2 rounded-full backdrop-blur-md cursor-pointer transition-all duration-300 transform
+                hover:scale-110 hover:bg-opacity-30 hover:bg-[#2cb67d] hover:shadow-lg"
                         >
                             {job}
                         </span>

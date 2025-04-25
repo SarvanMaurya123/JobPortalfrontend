@@ -1,5 +1,5 @@
-// store/slices/authSlice.ts
-import url from '@/app/lib/url';
+// store/slices/emplouerSlice.ts
+import urlemployer from '@/app/lib/employer';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
@@ -7,13 +7,11 @@ import axios from 'axios';
 axios.defaults.withCredentials = true;
 
 export interface AuthState {
-    user: {
+    employer: {
         id: string;
-        full_name: string;
+        first_name: string;
         email: string;
         role: string;
-        linked_in: string;
-        portfolio: string;
 
     } | null;
     token: string | null;
@@ -22,21 +20,21 @@ export interface AuthState {
 }
 
 const initialState: AuthState = {
-    user: null,
+    employer: null,
     token: null,
     loading: false,
     error: null,
 };
 
 // Async thunk for login
-export const login = createAsyncThunk(
-    'auth/login',
+export const employerLogin = createAsyncThunk(
+    'employer/login',
     async (
         credentials: { email: string; password: string; rememberMe: boolean },
         { rejectWithValue }
     ) => {
         try {
-            const res = await axios.post(`${url}/login`, {
+            const res = await axios.post(`${urlemployer}/login`, {
                 email: credentials.email,
                 password: credentials.password,
             });
@@ -49,13 +47,13 @@ export const login = createAsyncThunk(
 );
 
 // Async thunk for logout
-export const logout = createAsyncThunk('auth/logout', async () => {
-    await axios.post(`${url}/logout`);
+export const employerlogout = createAsyncThunk('employer/logout', async () => {
+    await axios.post(`${urlemployer}/logout`);
 
 });
 
-const authSlice = createSlice({
-    name: 'auth',
+const employerSlice = createSlice({
+    name: 'authemployer',
     initialState,
     reducers: {
         resetError: (state) => {
@@ -64,25 +62,25 @@ const authSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-            .addCase(login.pending, (state) => {
+            .addCase(employerLogin.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
-            .addCase(login.fulfilled, (state, action) => {
+            .addCase(employerLogin.fulfilled, (state, action) => {
                 state.loading = false;
                 state.token = action.payload.token;
-                state.user = action.payload.user;
+                state.employer = action.payload.employer;
             })
-            .addCase(login.rejected, (state, action: any) => {
+            .addCase(employerLogin.rejected, (state, action: any) => {
                 state.loading = false;
                 state.error = action.payload;
             })
-            .addCase(logout.fulfilled, (state) => {
-                state.user = null;
+            .addCase(employerlogout.fulfilled, (state) => {
+                state.employer = null;
                 state.token = null;
             });
     },
 });
 
-export const { resetError } = authSlice.actions;
-export default authSlice.reducer;
+export const { resetError } = employerSlice.actions;
+export default employerSlice.reducer;

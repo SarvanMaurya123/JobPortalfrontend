@@ -1,6 +1,10 @@
 'use client'
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useAppSelector } from '@/app/redux/hooks';
+import { RootState } from '@/app/store';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 export default function JobApplications() {
     // Sample data - you would replace this with your actual data fetching logic
@@ -55,6 +59,13 @@ export default function JobApplications() {
 
     // Filter states
     const [statusFilter, setStatusFilter] = useState("All");
+    const router = useRouter()
+    const user = useAppSelector((state: RootState) => state.auth.user)
+
+    if (user?.id) {
+        router.push("/")// redirect to login page
+        return toast.message("this page is for employer only")
+    }
 
     // Get all unique statuses for filter dropdown
     const statuses = ["All", ...new Set(applications.map(app => app.status))];

@@ -1,15 +1,26 @@
 "use client"
+import { isTokenExpired } from '@/app/lib/checkToken';
 import { useAppSelector } from '@/app/redux/hooks';
+import { RootState } from '@/app/store';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react'
+import { useSelector } from 'react-redux';
+import { toast } from 'sonner';
 
 export default function CandidateDashboard() {
 
+    const user = useSelector((state: RootState) => state.auth.user);
     const router = useRouter(); // ✅ Next.js Router
-    const isAuthenticated = useAppSelector((state) => state.auth.user);
-    if (!isAuthenticated?.id) {
-        router.push('/login')
+    const employer = useAppSelector((state) => state.authemployer.employer)
+    if (employer) {
+        router.push('/')
+        return toast.message("this page is for candidate only")
     }
+
+    if (!user?.id) {
+        router.push('/login')// Redirect to login page if user is not authenticated
+    }
+
     // Mock data - in a real app this would come from an API
     const [applications, setApplications] = useState([
         { id: 1, company: "Tech Solutions Inc.", position: "Senior Developer", status: "Interview", date: "2025-04-10" },
@@ -42,7 +53,7 @@ export default function CandidateDashboard() {
             {/* Header */}
             <header className="mb-8">
                 <h1 className="text-3xl font-bold">Candidate Dashboard</h1>
-                <p className="text-gray-600">Welcome back, John! {`Here's`} your job search overview.</p>
+                <p className="text-gray-600">Welcome back,<span className='text-xl font-bold text-green-600'>{user?.full_name}!</span> {`Here's`} your job search overview.</p>
             </header>
 
             {/* Stats */}

@@ -1,12 +1,22 @@
 
 "use client"
+import { useAppSelector } from '@/app/redux/hooks';
+import { RootState } from '@/app/store';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
+import { toast } from 'sonner';
 
 export default function EmployeeJobDashboard() {
     // Sample data - in a real application, this would come from an API or props
     const [activeTab, setActiveTab] = useState('posted');
+    const employer = useAppSelector((state: RootState) => state.authemployer.employer)
     const router = useRouter()
+    const user = useAppSelector((state: RootState) => state.auth.user)
+
+    if (user?.id) {
+        router.push("/")// redirect to login page
+        return toast.message("this page is for employer only")
+    }
     const postedJobs = [
         { id: 1, title: "Frontend Developer", applicants: 12, status: "Active", postedDate: "2025-03-28", location: "Remote", department: "Engineering", salary: "$90,000 - $120,000" },
         { id: 2, title: "UI/UX Designer", applicants: 8, status: "Active", postedDate: "2025-03-25", location: "New York", department: "Design", salary: "$85,000 - $105,000" },
@@ -35,16 +45,16 @@ export default function EmployeeJobDashboard() {
         <div className="p-6 max-w-6xl mx-auto">
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Employee Job Dashboard</h1>
-                    <p className="text-gray-600">Manage your job postings and track applicants in one place</p>
+                    <p className='text-black text-2xl'>Welcome <span className='text-green-600'>{employer?.first_name}</span></p>
+                    <p className="text-gray-600">View and manage your job postings, applicant stats,</p>
                 </div>
                 <div className="flex space-x-2">
-                    <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md">
+                    <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md cursor-pointer">
                         Export Data
                     </button>
 
                     <button
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md cursor-pointer"
                         onClick={() => (router.push("/employer/post-job"))}
                     >
                         Post New Job

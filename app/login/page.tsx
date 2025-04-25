@@ -5,6 +5,7 @@ import { useDispatch } from "react-redux";
 import { AppDispatch } from "../store";
 import { login } from "../store/slices/authSlice";
 import { toast } from "sonner"
+import { employerLogin } from "../store/slices/employerSlice";
 
 export default function LoginForm() {
     const [credentials, setCredentials] = useState({
@@ -30,29 +31,42 @@ export default function LoginForm() {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        setLoading(true);
         setError("");
+        setLoading(true);
 
         try {
+            // Try user login
             await dispatch(
                 login({
                     email: credentials.email,
                     password: credentials.password,
-                    rememberMe: credentials.rememberMe, // ✅ add this line
+                    rememberMe: credentials.rememberMe,
                 })
             ).unwrap();
 
-
-            // ✅ Store login state (optional)
-            if (credentials.rememberMe) {
-                localStorage.setItem("isLoggedIn", "true");
-            }
-
-            toast.success("Login successful ");
+            toast.success("User logged in successfully");
             router.push("/candidate/dashboard");
-        } catch (err: any) {
-            setError(err || "Login failed");
-            toast.error("Login failed", err)
+            return;
+        } catch (userErr) {
+            // Continue to employer login
+        }
+
+        try {
+            // Try employer login
+            const empRes = await dispatch(
+                employerLogin({
+                    email: credentials.email,
+                    password: credentials.password,
+                    rememberMe: credentials.rememberMe,
+                })
+            ).unwrap();
+
+            toast.success("Employer logged in successfully");
+            router.push("/employer/dashboard");
+            return;
+        } catch (employerErr) {
+            toast.error("Login failed. Please check your credentials.");
+            setError("Invalid email or password");
         } finally {
             setLoading(false);
         }
@@ -62,7 +76,6 @@ export default function LoginForm() {
         setShowRegistrationModal(false);
         router.push(`/register/${type}`);
     };
-
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
@@ -125,7 +138,7 @@ export default function LoginForm() {
                                 name="rememberMe"
                                 checked={credentials.rememberMe}
                                 onChange={handleChange}
-                                className="mr-2"
+                                className="mr-2 cursor-pointer"
                             />
                             Remember me
                         </label>
@@ -135,7 +148,7 @@ export default function LoginForm() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`w-full py-2 px-4 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
+                        className={`w-full py-2 px-4 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer
                             ${loading ? "bg-indigo-400" : "bg-indigo-600 hover:bg-indigo-700"}`}
                     >
                         {loading ? "Signing in..." : "Sign in"}
@@ -146,7 +159,7 @@ export default function LoginForm() {
                         <button
                             type="button"
                             onClick={() => setShowRegistrationModal(true)}
-                            className="font-medium text-indigo-600 hover:text-indigo-500"
+                            className="font-medium text-indigo-600 hover:text-indigo-500 cursor-pointer"
                         >
                             Register here
                         </button>

@@ -1,7 +1,6 @@
 // File: components/JobBoard.tsx
 "use client";
-
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,82 +24,13 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Heart, Search, MapPin } from "lucide-react";
+import { Search, MapPin } from "lucide-react";
+import axios from 'axios';
+import { useAppSelector } from '@/app/redux/hooks';
+import urlemployer from '@/app/lib/employer';
+import clsx from 'clsx';
+import { useRouter } from 'next/navigation';
 
-const JOBS = [
-    {
-        id: 1,
-        title: "Product Redesign",
-        type: "FULL TIME",
-        location: "2708 Scenic Way, IL 62373",
-        logo: "/logos/product-redesign.png",
-        color: "#4CAF50",
-        isFavorite: true
-    },
-    {
-        id: 2,
-        title: "New Product Mockup",
-        type: "FULL TIME",
-        location: "2708 Scenic Way, IL 62373",
-        logo: "/logos/product-mockup.png",
-        color: "#2196F3",
-        isFavorite: false
-    },
-    {
-        id: 3,
-        title: "Custom Php Developer",
-        type: "FULL TIME",
-        location: "3755 C Street, Worcester",
-        logo: "/logos/php-dev.png",
-        color: "#9C27B0",
-        isFavorite: true
-    },
-    {
-        id: 4,
-        title: "Wordpress Developer",
-        type: "PART TIME",
-        location: "2719 Duff Avenue, Winooski",
-        logo: "/logos/wordpress-dev.png",
-        color: "#FF5722",
-        isFavorite: false
-    },
-    {
-        id: 5,
-        title: "Web Maintenence",
-        type: "INTERNSHIP",
-        location: "2708 Scenic Way, IL 62373",
-        logo: "/logos/web-maintenance.png",
-        color: "#F44336",
-        isFavorite: true
-    },
-    {
-        id: 6,
-        title: "Photoshop Designer",
-        type: "PART TIME",
-        location: "2865 Emma Street, Lubbock",
-        logo: "/logos/photoshop-designer.png",
-        color: "#FFC107",
-        isFavorite: false
-    },
-    {
-        id: 7,
-        title: "HTML5 & CSS3 Coder",
-        type: "FULL TIME",
-        location: "2713 Burnside Avenue, Logan",
-        logo: "/logos/html-css-coder.png",
-        color: "#673AB7",
-        isFavorite: true
-    },
-    {
-        id: 8,
-        title: ".Net Developer",
-        type: "PART TIME",
-        location: "3815 Forest Drive, Alexandria",
-        logo: "/logos/net-developer.png",
-        color: "#00BCD4",
-        isFavorite: true
-    }
-];
 
 // Animation variants
 const containerVariants = {
@@ -145,27 +75,52 @@ const logoVariants = {
     }
 };
 
-const favoriteVariants = {
-    unfavorited: { scale: 1 },
-    favorited: {
-        scale: [1, 1.3, 1],
-        transition: { duration: 0.3 }
-    }
+type Job = {
+    id: number;
+    employer_id: number;
+    title: string;
+    location: string;
+    employment_type: string;
+    experience_level: string;
 };
 
 export default function JobBoard() {
-    const [favorites, setFavorites] = useState<Record<number, boolean>>(
-        JOBS.reduce((acc, job) => ({ ...acc, [job.id]: job.isFavorite }), {})
-    );
     const [searchValue, setSearchValue] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
+    const token = useAppSelector((state) => state.auth.token);
+    const user = useAppSelector((state) => state.auth.user);
+    const router = useRouter();
 
-    const toggleFavorite = (id: number) => {
-        setFavorites(prev => ({
-            ...prev,
-            [id]: !prev[id]
-        }));
+
+
+    const [jobs, setJobs] = useState([]);
+
+    const handleApply = (job: Job) => {
+        console.log(job.id);
+        router.push(`/jobs/${job.id}`);
     };
+
+    useEffect(() => {
+        const fetchJobs = async () => {
+            try {
+                const response = await axios.get(`${urlemployer}/jobseeker/jobs/${user?.id}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+                setJobs(response.data);
+            } catch (error) {
+                console.error("Error fetching jobs:", error);
+            }
+        };
+
+        if (token && user?.id) {
+            fetchJobs();
+        }
+    }, [token, user?.id]); // ✅ Add `user?.id` as a dependency
+
+
+
 
     return (
         <div className="max-w-6xl mx-auto font-sans mt-5 mb-5">
@@ -255,46 +210,52 @@ export default function JobBoard() {
                 animate="visible"
             >
                 <AnimatePresence>
-                    {JOBS.map(job => (
+                    {jobs.map((job: Job, index: number) => (
+
                         <motion.div
-                            key={job.id}
+                            key={index}
+
                             variants={itemVariants}
                             whileHover={{ y: -5, transition: { duration: 0.2 } }}
                         >
                             <Card className="overflow-hidden border-0 shadow-md hover:shadow-xl transition-shadow duration-300">
                                 <div className="p-3">
                                     <div className="flex justify-between items-center mb-4">
-                                        <span className={`text-xs font-medium px-3 py-1 rounded-full ${job.type === "FULL TIME" ? "bg-green-100 text-green-800" :
-                                            job.type === "PART TIME" ? "bg-yellow-100 text-yellow-800" :
+                                        <span className={`text-xs font-medium px-3 py-1 rounded-full ${job.employment_type === "FULL TIME" ? "bg-green-100 text-green-800" :
+                                            job.employment_type === "PART TIME" ? "bg-yellow-100 text-yellow-800" :
                                                 "bg-red-100 text-red-800"
                                             }`}>
-                                            {job.type}
+                                            {job.employment_type}
                                         </span>
-                                        <motion.button
-                                            className={`rounded-full focus:outline-none ${favorites[job.id] ? 'text-red-500' : 'text-gray-300'}`}
-                                            variants={favoriteVariants}
-                                            animate={favorites[job.id] ? "favorited" : "unfavorited"}
-                                            onClick={() => toggleFavorite(job.id)}
-                                        >
-                                            <Heart className="h-5 w-5" fill={favorites[job.id] ? "currentColor" : "none"} />
-                                        </motion.button>
                                     </div>
+
                                     <div className="flex justify-center py-4">
+
                                         <motion.div
-                                            className="w-20 h-20 rounded-full shadow-sm flex items-center justify-center overflow-hidden"
-                                            style={{ background: `linear-gradient(135deg, ${job.color}22, ${job.color}44)` }}
+                                            className={clsx(
+                                                "w-20 h-20 rounded-full shadow-sm flex items-center justify-center overflow-hidden",
+                                                {
+                                                    "bg-blue-500": job.title === "Full-time",
+                                                    "bg-green-500": job.title === "Part-time",
+                                                    "bg-yellow-500": job.title === "Internship",
+                                                    "bg-purple-500": job.title === "Freelance",
+                                                    "bg-red-500": job.title === "Contract",
+                                                    "bg-pink-500": job.title === "Temporary",
+                                                    "bg-gray-500": job.title === "Others"
+                                                }
+                                            )}
                                             variants={logoVariants}
                                             initial="initial"
                                             animate="animate"
                                             whileHover="hover"
                                         >
-                                            {/* For demo purposes, using colored circles with initials */}
                                             <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-inner">
-                                                <span className="font-bold text-xl" style={{ color: job.color }}>
+                                                <span className="font-bold text-xl">
                                                     {job.title.charAt(0)}
                                                 </span>
                                             </div>
                                         </motion.div>
+
                                     </div>
                                     <CardContent className="px-0 pt-4 pb-0">
                                         <h3 className="text-center font-semibold text-lg mb-2">{job.title}</h3>
@@ -302,9 +263,10 @@ export default function JobBoard() {
                                             <MapPin className="h-3 w-3" /> {job.location}
                                         </p>
                                         <motion.button
-                                            className="w-full mt-4 py-2 px-4 border border-gray-300 hover:border-green-500 text-sm rounded-md text-gray-700 hover:text-green-600 font-medium bg-white hover:bg-green-50 transition-all duration-300"
+                                            className="w-full mt-4 py-2 px-4 border border-gray-300 hover:border-green-500 text-sm rounded-md text-gray-700 hover:text-green-600 font-medium bg-white hover:bg-green-50 transition-all duration-300 cursor-pointer"
                                             whileHover={{ scale: 1.02 }}
                                             whileTap={{ scale: 0.98 }}
+                                            onClick={() => handleApply(job)} // job.id is passed here
                                         >
                                             APPLY NOW
                                         </motion.button>
@@ -333,8 +295,8 @@ export default function JobBoard() {
                                 }}
                             />
                         </PaginationItem>
-                        {[1, 2, 3].map((page) => (
-                            <PaginationItem key={page}>
+                        {[1, 2, 3].map((page, index) => (
+                            <PaginationItem key={index}>
                                 <PaginationLink
                                     href="#"
                                     isActive={currentPage === page}

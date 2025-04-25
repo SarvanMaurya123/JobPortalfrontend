@@ -2,7 +2,7 @@
 
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
-import { store, persistor } from "../store"; // update the path accordingly
+import { store, persistor } from "../store"; // Update path as needed
 
 export default function ReduxProvider({ children }: { children: React.ReactNode }) {
     return (

@@ -1,6 +1,10 @@
 "use client"
 import Loader from "@/app/componente/Loader";
+import urlemployer from "@/app/lib/employer";
+import axios from "axios";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function EmployeeRegister() {
     const [formData, setFormData] = useState({
@@ -10,26 +14,13 @@ export default function EmployeeRegister() {
         password: "",
         confirmPassword: "",
         phone: "",
-        address: "",
-        city: "",
-        state: "",
-        zipCode: "",
         dateOfBirth: "",
         gender: "",
-        employeeId: "",
-        department: "",
-        position: "",
-        joinDate: "",
-        salary: "",
-        bankName: "",
-        accountNumber: "",
-        ifscCode: "",
-        emergencyContactName: "",
-        emergencyContactPhone: "",
-        profilePhoto: null,
-        idProof: null,
         termsAccepted: false
     });
+    const [error, setError] = useState("");
+    const router = useRouter();
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
@@ -38,35 +29,71 @@ export default function EmployeeRegister() {
             ...prevData,
             [name]:
                 type === "checkbox" && e.target instanceof HTMLInputElement ? e.target.checked :
-                    type === "file" && e.target instanceof HTMLInputElement ? e.target.files?.[0] :
-                        value
+                    value
         }));
     };
 
 
 
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        // Validate form
+
+        setIsLoading(true);
         if (formData.password !== formData.confirmPassword) {
             alert("Passwords do not match!");
             return;
         }
 
-        // Here you would typically send the data to your backend
-        console.log("Employee Registration submitted:", formData);
-        alert("Employee registration successful!");
-
-        // Form submission logic would go here
-        // For example: API call to register the employee
+        try {
+            const response = await axios.post(`${urlemployer}/register`, {
+                first_name: formData.firstName,
+                last_name: formData.lastName,
+                email: formData.email,
+                password: formData.password,
+                confirmPassword: formData.confirmPassword,
+                phone: formData.phone,
+                date_of_birth: formData.dateOfBirth,
+                gender: formData.gender,
+                terms_accepted: formData.termsAccepted,
+            });
+            // Reset form
+            setFormData({
+                firstName: "",
+                lastName: "",
+                email: "",
+                password: "",
+                confirmPassword: "",
+                phone: "",
+                dateOfBirth: "",
+                gender: "",
+                termsAccepted: false
+            });
+            console.log("Registration successful:", response.data);
+            toast.success("Registration successful!");
+            router.push("/login");
+        } catch (error: any) {
+            setError(error.message);
+            console.error("Registration failed:", error.response?.data || error.message);
+            toast.error(error.response?.data?.message || "Registration failed. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
 
         <div className="max-w-3xl mx-auto p-6 bg-white rounded-lg shadow-lg mt-10 mb-10">
             <h1 className="text-3xl font-bold mb-6 text-center text-green-600">Employee Registration</h1>
-
+            {error && (
+                <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+                    <div className="flex">
+                        <div>
+                            <p className="text-sm text-red-700">{error}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Personal Information */}
                 <div className="border-b pb-4">
@@ -192,7 +219,7 @@ export default function EmployeeRegister() {
                                 checked={formData.termsAccepted}
                                 onChange={handleChange}
                                 required
-                                className="h-4 w-4 text-green-600 border-gray-300 rounded"
+                                className="h-4 w-4 text-green-600 border-gray-300 rounded cursor-pointer"
                             />
                         </div>
                         <div className="ml-3 text-sm">
@@ -204,9 +231,14 @@ export default function EmployeeRegister() {
 
                     <button
                         type="submit"
-                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 cursor-pointer"
                     >
-                        Register Employee
+                        {isLoading ? (
+                            <Loader fullScreen />
+
+                        ) : (
+                            "Create Account"
+                        )}
                     </button>
                 </div>
             </form>

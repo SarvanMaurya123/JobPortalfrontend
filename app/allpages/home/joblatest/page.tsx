@@ -9,7 +9,7 @@ export default function JobSection() {
     const routes = useRouter()
     const jobs = [
         {
-            id: 1,
+            id: 0,
             title: "Senior Frontend Developer",
             company: "TechCorp Solutions",
             location: "San Francisco, CA (Remote)",
@@ -21,7 +21,7 @@ export default function JobSection() {
             tags: ["React", "TypeScript", "UI/UX"]
         },
         {
-            id: 2,
+            id: 1,
             title: "DevOps Engineer",
             company: "Cloud Systems Inc.",
             location: "New York, NY",
@@ -33,7 +33,7 @@ export default function JobSection() {
             tags: ["AWS", "Docker", "CI/CD"]
         },
         {
-            id: 3,
+            id: 2,
             title: "UX/UI Designer",
             company: "Creative Digital",
             location: "Chicago, IL (Hybrid)",
@@ -93,17 +93,17 @@ export default function JobSection() {
         <div className="w-full max-w-6xl mx-auto mt-10 px-4 mb-10">
             {/* Tabs */}
             <div className="flex justify-center mb-6">
-                <div className="flex bg-green-600 rounded-lg p-2 gap-2">
+                <div className="flex bg-[#2cb67d] rounded-lg p-2 gap-2">
                     <button
                         onClick={() => setActiveTab("latest")}
-                        className={`px-6 py-2 text-lg font-semibold cursor-pointer rounded-md transition ${activeTab === "latest" ? "bg-white text-green-600" : "text-white"
+                        className={`px-6 py-2 text-lg font-semibold cursor-pointer rounded-md transition ${activeTab === "latest" ? "bg-white bg-[#2cb67d]" : "text-white"
                             }`}
                     >
                         Latest Jobs
                     </button>
                     <button
                         onClick={() => setActiveTab("recent")}
-                        className={`px-6 py-2 text-lg font-semibold cursor-pointer rounded-md transition ${activeTab === "recent" ? "bg-white text-green-600" : "text-white"
+                        className={`px-6 py-2 text-lg font-semibold cursor-pointer rounded-md transition ${activeTab === "recent" ? "bg-white bg-[#2cb67d]" : "text-white"
                             }`}
                     >
                         Recent Jobs
@@ -113,9 +113,9 @@ export default function JobSection() {
 
             {/* Job Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {jobs.map((job) => (
+                {jobs.map((job, index) => (
                     <div
-                        key={job.id}
+                        key={index}
                         className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 relative flex flex-col h-full border border-gray-100"
                     >
                         {/* Job Type Label */}
@@ -170,7 +170,7 @@ export default function JobSection() {
                                 />
                             </button>
 
-                            <button className="px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 text-sm">
+                            <button className="px-4 py-2 bg-[#2cb67d] text-white font-medium rounded-lg hover:bg-[#2cb67d] transition focus:ring-2 focus:bg-[#2cb67d] focus:ring-opacity-50 text-sm cursor-pointer">
                                 Apply Now
                             </button>
                         </div>

@@ -1,228 +1,390 @@
-"use client"
-import { useAppSelector } from '@/app/redux/hooks';
-import { useRouter } from 'next/navigation';
-import React from 'react';
+"use client";
+import { motion } from 'framer-motion';
+import { useAppSelector } from "@/app/redux/hooks";
+import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import {
+
+    MapPin,
+    Mail,
+    Phone,
+    Clock,
+    AlertTriangle,
+    CheckCircle,
+    Briefcase,
+    Award,
+    CheckSquare,
+
+    PieChart,
+} from "lucide-react";
+import axios from "axios";
+import url from "@/app/lib/url";
+import { toast } from 'sonner';
+import SkillSection from './skilles/page';
+import { AppDispatch, RootState } from '@/app/store';
+import { useDispatch, useSelector } from 'react-redux';
+import { setProfile as setProfileRedux } from "@/app/store/slices/profileSlice"; // ✅ rename the Redux one
+import { isTokenExpired } from '@/app/lib/checkToken';
+import ProfileCompletion from './progressbar/page';
+
+
+interface BasicProfileData {
+    full_name: string;
+    title: string; // <- from interested_area
+    location: string;
+    email: string;
+    phone: string; // <- from phone_number
+    about: string;
+    resume_link: string;
+}
+
 
 export default function ProfileJobSeeker() {
+    const router = useRouter();
+    const dispatch = useDispatch<AppDispatch>();
 
-    const router = useRouter()
-    const isAuthenticated = useAppSelector((state) => state.auth.user)
-    if (!isAuthenticated) {
-        router.push('/login')
+    const user = useSelector((state: RootState) => state.auth.user);
+    const token = useSelector((state: RootState) => state.auth.token);
+
+    const [profileData, setProfileData] = useState<BasicProfileData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [updateSuccess, setUpdateSuccess] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const isAuthenticated = !!token && !!user && !isTokenExpired(token);
+
+    const employer = useAppSelector((state) => state.authemployer.employer)
+    if (employer) {
+        router.push('/')
+        return toast.message("this page is for candidate only")
     }
-    // Sample data - in a real app this would come from props or API
-    const profileData = {
-        name: "John Doe",
-        title: "Frontend Developer",
-        location: "San Francisco, CA",
-        email: "john.doe@example.com",
-        phone: "(555) 123-4567",
-        about: "Passionate frontend developer with 5+ years of experience building responsive and accessible web applications.",
-        skills: ["React", "JavaScript", "TypeScript", "HTML/CSS", "UI/UX Design"],
-        experience: [
-            {
-                company: "Tech Solutions Inc.",
-                position: "Senior Frontend Developer",
-                duration: "2020 - Present"
-            },
-            {
-                company: "Web Innovations",
-                position: "Frontend Developer",
-                duration: "2018 - 2020"
+    useEffect(() => {
+        if (!isAuthenticated) {
+            return router.push("/login");
+        }
+
+        if (user?.id) {
+            fetchProfileData();
+        }
+    }, [user]);
+
+    const fetchProfileData = async () => {
+        try {
+            setLoading(true);
+            const res = await axios.get(`${url}/profile/${user?.id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            const data = res.data?.data;
+            dispatch(setProfileRedux(data)); // ✅ correct Redux action
+
+            if (!data || Object.keys(data).length === 0) {
+                setProfileData(null); // triggers create profile UI
+            } else {
+                setProfileData({
+                    full_name: data.full_name,
+                    title: data.interested_area,
+                    location: data.location,
+                    email: data.email,
+                    phone: data.phone_number,
+                    about: data.about,
+                    resume_link: data.resume_link,
+                });
             }
-        ],
-        education: [
-            {
-                institution: "University of Technology",
-                degree: "BS in Computer Science",
-                year: "2018"
+        } catch (err: any) {
+            if (err.response?.status === 404 && err.response?.data?.message === "Profile not found") {
+                setProfileData(null);
+            } else {
+                setError(err.response?.data?.message || err.message || "Something went wrong");
             }
-        ],
-        applications: [
-            { company: "Acme Corp", position: "UI Developer", status: "In Review", date: "Mar 28, 2025" },
-            { company: "TechGiant", position: "Frontend Engineer", status: "Interview Scheduled", date: "Mar 25, 2025" },
-            { company: "StartupXYZ", position: "React Developer", status: "Applied", date: "Mar 22, 2025" }
-        ]
+        } finally {
+            setLoading(false);
+        }
     };
+
+    const handleDelete = async () => {
+        const confirmDelete = window.confirm("Are you sure you want to delete your profile?");
+        if (!confirmDelete) return;
+
+        try {
+            setLoading(true);
+            await axios.delete(`${url}/profile/${user?.id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+
+                },
+            });
+
+            toast.success("Profile deleted successfully");
+            // Add logic to reset user state or redirect if needed
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to delete profile");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <div className="text-xl flex items-center">
+                    <Clock className="animate-spin mr-2" size={24} />
+                    Loading profile...
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <div className="text-xl text-red-500 flex items-center">
+                    <AlertTriangle className="mr-2" size={24} />
+                    {error}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-6xl mx-auto px-4 py-8">
-            {/* Header with profile overview */}
-            <div className="bg-white shadow rounded-lg mb-6 p-6">
-                <div className="flex flex-col md:flex-row">
-                    <div className="w-full md:w-1/4 flex justify-center mb-4 md:mb-0">
-                        <div className="w-32 h-32 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 text-2xl">
-                            {profileData.name.split(' ').map(name => name[0]).join('')}
-                        </div>
-                    </div>
-                    <div className="w-full md:w-3/4">
-                        <h1 className="text-2xl font-bold mb-1">{profileData.name}</h1>
-                        <h2 className="text-xl text-gray-600 mb-2">{profileData.title}</h2>
-                        <div className="flex flex-wrap mb-4">
-                            <div className="mr-4 mb-2">
-                                <span className="text-gray-600">📍 {profileData.location}</span>
-                            </div>
-                            <div className="mr-4 mb-2">
-                                <span className="text-gray-600">✉️ {profileData.email}</span>
-                            </div>
-                            <div className="mb-2">
-                                <span className="text-gray-600">📱 {profileData.phone}</span>
-                            </div>
-                        </div>
-                        <p className="text-gray-700">{profileData.about}</p>
-                    </div>
+            {updateSuccess && (
+                <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4 flex items-center">
+                    <CheckCircle className="mr-2" size={18} />
+                    <span className="block sm:inline">Profile updated successfully!</span>
                 </div>
-            </div>
+            )}
+
+            {profileData ? (
+                <div className="bg-white shadow rounded-lg mb-6 p-6">
+
+                    <div className='flex flex-col sm:flex-row gap-3 mt-2 md:mt-0'>
+                        <h1 className="text-2xl font-bold mb-1">{profileData.full_name}</h1>
+                        <div className='m-2'>
+                            {<a className="px-4 py-2 bg-green-600 rounded-xl text-white text-center hover:bg-green-700 transition"
+
+                                href={`${user?.portfolio}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >Portfolio</a>}
+                            {<a className="px-4 mx-2.5 py-2 bg-green-600 rounded-xl text-white text-center hover:bg-green-700 transition"
+
+                                href={`${user?.linked_in}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >Go To Linkedin</a>}
+                        </div>
+                    </div>
+                    <h2 className="text-xl text-gray-600 mb-2">{profileData.title}</h2>
+                    <div className="flex flex-wrap mb-4">
+                        <div className="mr-4 mb-2 flex items-center text-gray-600">
+                            <MapPin size={16} className="mr-1" />
+                            {profileData.location}
+                        </div>
+                        <div className="mr-4 mb-2 flex items-center text-gray-600">
+                            <Mail size={16} className="mr-1" />
+                            {profileData.email}
+                        </div>
+                        <div className="mb-2 flex items-center text-gray-600">
+                            <Phone size={16} className="mr-1" />
+                            {profileData.phone}
+                        </div>
+                    </div>
+                    <p className="text-gray-700">{profileData.about}</p>
+                    <motion.section>
+                        <h3 className="text-2xl font-bold mb-4 text-gray-800 border-b border-gray-200 pb-2">Resume</h3>
+                        <div className="flex items-center flex justify-between">
+                            <a
+                                href={profileData.resume_link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="bg-green-600  text-white font-bold py-2 px-4 rounded inline-flex items-center transition-colors cursor-pointer"
+                            >
+                                <span className="mr-2">📄</span>
+                                <span>Download Resume</span>
+                            </a>
+                            <div>
+                                <button
+                                    onClick={() => router.push("/candidate/profile/basicinfoupdate")}
+                                    className="bg-green-600  text-white font-bold py-2 px-4 rounded inline-flex items-center transition-colors cursor-pointer"
+                                >
+                                    Update
+                                </button>
+
+                                <button
+                                    onClick={handleDelete}
+                                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded inline-flex items-center transition-colors cursor-pointer m-4">
+                                    Delete
+                                </button >
+
+                            </div>
+                        </div>
+                    </motion.section>
+                </div>
+
+            ) : (
+                <div className="bg-white shadow rounded-lg mb-6 p-6 flex justify-center">
+                    <button
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
+                        onClick={() => router.push("/candidate/profile/profileinfogive")}
+                    >
+                        Create Profile
+                    </button>
+                </div>
+            )}
 
             {/* Dashboard Section */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                {/* Job Application Stats */}
+                {/* Application Stats */}
                 <div className="bg-white shadow rounded-lg p-6">
-                    <h3 className="text-lg font-bold mb-4">Application Status</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="border rounded-lg p-4 text-center">
-                            <div className="text-2xl font-bold text-blue-500">8</div>
-                            <div className="text-sm text-gray-600">Total Applications</div>
+                    <h3 className="text-lg font-bold mb-4 flex items-center">
+                        <PieChart size={20} className="mr-2" />
+                        Application Status
+                    </h3>
+                    {/* {profileData?.applications ? (
+                        <div className="grid grid-cols-2 gap-4">
+                            <DashboardStat
+                                count={profileData.applications.length}
+                                label="Total Applications"
+                                icon={<Briefcase size={14} />}
+                                color="text-blue-500"
+                            />
+                            <DashboardStat
+                                count={profileData.applications.filter(a => a.status === "Interview Scheduled").length}
+                                label="Interviews"
+                                icon={<Calendar size={14} />}
+                                color="text-green-500"
+                            />
+                            <DashboardStat
+                                count={profileData.applications.filter(a => a.status === "In Review").length}
+                                label="In Review"
+                                icon={<Clock size={14} />}
+                                color="text-yellow-500"
+                            />
+                            <DashboardStat
+                                count={profileData.applications.filter(a => a.status === "Offer").length}
+                                label="Offers"
+                                icon={<Award size={14} />}
+                                color="text-purple-500"
+                            />
                         </div>
-                        <div className="border rounded-lg p-4 text-center">
-                            <div className="text-2xl font-bold text-green-500">3</div>
-                            <div className="text-sm text-gray-600">Interviews</div>
-                        </div>
-                        <div className="border rounded-lg p-4 text-center">
-                            <div className="text-2xl font-bold text-yellow-500">4</div>
-                            <div className="text-sm text-gray-600">In Review</div>
-                        </div>
-                        <div className="border rounded-lg p-4 text-center">
-                            <div className="text-2xl font-bold text-purple-500">1</div>
-                            <div className="text-sm text-gray-600">Offers</div>
-                        </div>
-                    </div>
+                    ) : (
+                        <p>Loading applications...</p>
+                    )} */}
+
                 </div>
 
                 {/* Profile Completion */}
                 <div className="bg-white shadow rounded-lg p-6">
-                    <h3 className="text-lg font-bold mb-4">Profile Completion</h3>
-                    <div className="mb-4">
-                        <div className="flex justify-between mb-1">
-                            <span className="text-gray-700">Overall</span>
-                            <span className="text-gray-700">85%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div className="bg-blue-600 h-2 rounded-full" style={{ width: '85%' }}></div>
-                        </div>
-                    </div>
+                    <h3 className="text-lg font-bold mb-4 flex items-center">
+                        <CheckSquare size={20} className="mr-2" />
+                        Profile Completion
+                    </h3>
+                    <ProfileCompletion />
+                </div>
+
+                {/* Recent Applications */}
+                <div className="bg-white shadow rounded-lg p-6">
+                    <h3 className="text-lg font-bold mb-4 flex items-center">
+                        <Briefcase size={20} className="mr-2" />
+                        Recent Applications
+                    </h3>
                     <div className="space-y-3">
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Basic Info</span>
-                            <span className="text-green-600">✓ Complete</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Work Experience</span>
-                            <span className="text-green-600">✓ Complete</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Education</span>
-                            <span className="text-green-600">✓ Complete</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Portfolio</span>
-                            <span className="text-yellow-600">⚠ Incomplete</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Recommended Jobs */}
-                <div className="bg-white shadow rounded-lg p-6">
-                    <h3 className="text-lg font-bold mb-4">Recommended Jobs</h3>
-                    <div className="space-y-4">
-                        <div className="border-b pb-3">
-                            <h4 className="font-medium">Senior React Developer</h4>
-                            <p className="text-gray-600 text-sm">TechCorp • San Francisco, CA</p>
-                            <p className="text-gray-500 text-sm">$120k - $150k • Remote</p>
-                        </div>
-                        <div className="border-b pb-3">
-                            <h4 className="font-medium">Frontend Engineer</h4>
-                            <p className="text-gray-600 text-sm">InnovateTech • New York, NY</p>
-                            <p className="text-gray-500 text-sm">$110k - $140k • Hybrid</p>
-                        </div>
-                        <div className="pb-2">
-                            <h4 className="font-medium">UI/UX Developer</h4>
-                            <p className="text-gray-600 text-sm">DesignMasters • Seattle, WA</p>
-                            <p className="text-gray-500 text-sm">$100k - $130k • On-site</p>
-                        </div>
-                    </div>
-                    <button className="mt-3 text-blue-600 text-sm font-medium">View all recommendations →</button>
-                </div>
-            </div>
-
-            {/* Recent Applications */}
-            <div className="bg-white shadow rounded-lg p-6 mb-6">
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-bold">Recent Applications</h3>
-                    <button className="text-blue-600 text-sm font-medium">View all →</button>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {profileData.applications.map((app, index) => (
-                                <tr key={index}>
-                                    <td className="px-6 py-4 whitespace-nowrap">{app.company}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">{app.position}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                            ${app.status === 'Interview Scheduled' ? 'bg-green-100 text-green-800' :
-                                                app.status === 'In Review' ? 'bg-yellow-100 text-yellow-800' :
-                                                    'bg-gray-100 text-gray-800'}`}>
-                                            {app.status}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{app.date}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                        <button className="text-blue-600 hover:text-blue-900">View Details</button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {/* Skills and Experience Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Skills */}
-                <div className="bg-white shadow rounded-lg p-6">
-                    <h3 className="text-lg font-bold mb-4">Skills</h3>
-                    <div className="flex flex-wrap gap-2">
-                        {profileData.skills.map((skill, index) => (
-                            <span key={index} className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
-                                {skill}
-                            </span>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Experience */}
-                <div className="bg-white shadow rounded-lg p-6">
-                    <h3 className="text-lg font-bold mb-4">Experience</h3>
-                    <div className="space-y-4">
-                        {profileData.experience.map((exp, index) => (
-                            <div key={index} className={index < profileData.experience.length - 1 ? "border-b pb-4" : ""}>
-                                <h4 className="font-medium">{exp.position}</h4>
-                                <p className="text-gray-600">{exp.company} • {exp.duration}</p>
+                        {/* {profileData?.applications?.slice(0, 3).map((app, index) => (
+                            <div key={index} className="border-b pb-2 last:border-b-0">
+                                <div className="font-medium">{app.position}</div>
+                                <div className="text-sm text-gray-600 flex items-center">
+                                    <Building size={14} className="mr-1" />
+                                    {app.company}
+                                </div>
+                                <div className="text-xs text-gray-500 mt-1">{app.date}</div>
                             </div>
-                        ))}
+                        ))} */}
                     </div>
                 </div>
+            </div>
+            {/* Skills */}
+            <div className="bg-white shadow rounded-lg p-6">
+                <div className="flex flex-wrap gap-2">
+                    <SkillSection />
+                </div>
+            </div>
+        </div>
+
+
+    );
+}
+
+// ✅ Reusable Component: Dashboard Stat Box
+function DashboardStat({ count, label, icon, color }: { count: number; label: string; icon: React.ReactNode; color: string }) {
+    return (
+        <div className="border rounded-lg p-4 text-center">
+            <div className={`text-2xl font-bold ${color}`}>{count}</div>
+            <div className="text-sm text-gray-600 flex items-center justify-center">
+                {icon}
+                {label}
             </div>
         </div>
     );
 }
+
+// // ✅ Reusable Component: Progress Bar
+// function Progress({ label, percent }: { label: string; percent: number }) {
+//     return (
+//         <div className="mb-4">
+//             <div className="flex justify-between mb-1">
+//                 <span className="text-gray-700">{label}</span>
+//                 <span className="text-gray-700">{percent}%</span>
+//             </div>
+//             <div className="w-full bg-gray-200 rounded-full h-2">
+//                 <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${percent}%` }}></div>
+//             </div>
+//         </div>
+//     );
+// }
+
+// // ✅ Reusable Component: Completion Item
+// function CompletionItem({ label, complete }: { label: string; complete: boolean }) {
+//     const icon = complete ? <CheckCircle size={14} className="mr-1" /> : <AlertTriangle size={14} className="mr-1" />;
+//     const color = complete ? "text-green-600" : "text-yellow-600";
+//     return (
+//         <div className="flex justify-between">
+//             <span className="text-gray-600 flex items-center">
+
+//             </span>
+//             <span className={`${color} flex items-center`}>{icon} {complete ? "Complete" : "Incomplete"}</span>
+//         </div>
+//     );
+// }
+
+
+{/* Skills and Experience Section */ }
+<div className="">
+    {/* Skills */}
+    <div className="bg-white shadow rounded-lg p-6">
+        <h3 className="text-lg font-bold mb-4 flex items-center">
+            <Award size={20} className="mr-2" />
+            Skills
+        </h3>
+        <div className="flex flex-wrap gap-2">
+            <SkillSection />
+        </div>
+    </div>
+    <div className="bg-white shadow rounded-lg p-6">
+        <h3 className="text-lg font-bold mb-4 flex items-center">
+            <Briefcase size={20} className="mr-2" />
+            Education
+        </h3>
+        <div className="">
+
+        </div>
+    </div>
+</div>
+
+
+
