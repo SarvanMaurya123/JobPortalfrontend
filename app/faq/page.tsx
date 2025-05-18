@@ -159,7 +159,7 @@ const FAQPage = () => {
                     animate="visible"
                 >
                     <motion.button
-                        className={`px-4 py-2 rounded-full font-medium text-sm sm:text-base transition-colors ${selectedCategory === null
+                        className={`px-4 py-2 cursor-pointer rounded-full font-medium text-sm sm:text-base transition-colors ${selectedCategory === null
                             ? 'bg-green-500 text-white'
                             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                             }`}
@@ -173,7 +173,7 @@ const FAQPage = () => {
                     {categories.map((category) => (
                         <motion.button
                             key={category}
-                            className={`px-4 py-2 rounded-full font-medium text-sm sm:text-base transition-colors ${selectedCategory === category
+                            className={`px-4 py-2 rounded-full font-medium text-sm sm:text-base transition-colors cursor-pointer ${selectedCategory === category
                                 ? 'bg-green-500 text-white'
                                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                 }`}
@@ -258,10 +258,10 @@ const FAQPage = () => {
                         Still have questions?
                     </h3>
                     <p className="text-gray-600 mb-6">
-                        Can't find the answer you're looking for? Please chat with our friendly team.
+                        Can not find the answer you are looking for? Please chat with our friendly team.
                     </p>
                     <motion.button
-                        className="bg-green-500 text-white font-medium py-3 px-8 rounded-lg shadow-md"
+                        className="bg-green-500 cursor-pointer text-white font-medium py-3 px-8 rounded-lg shadow-md "
                         whileHover={{ scale: 1.05, boxShadow: "0px 8px 15px rgba(0, 0, 0, 0.1)" }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => { routes.push("/contact") }}

@@ -3,10 +3,9 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { useAppSelector } from '@/app/redux/hooks'
 import url from '@/app/lib/url'
-import { FileText, MessageSquare, Save } from 'lucide-react'
+import { FileText, Save } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { isTokenExpired } from '@/app/lib/checkToken'
 
 export default function UpdateProfilePage() {
     const router = useRouter()
@@ -51,11 +50,15 @@ export default function UpdateProfilePage() {
         }
 
         fetchData()
-    }, [])
+    }, [token, user?.id])
 
-    const handleChange = (e: any) => {
-        setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
-    }
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        setFormData(prev => ({
+            ...prev,
+            [e.target.name]: e.target.value
+        }));
+    };
+
 
     const handleSubmit = async () => {
         await axios.put(`${url}/profile/${user?.id}`, formData, {

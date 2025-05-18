@@ -6,6 +6,10 @@ import { useParams, useRouter } from 'next/navigation';
 import urlemployer from '@/app/lib/employer';
 import { motion } from "framer-motion";
 import Link from 'next/link';
+import url from '@/app/lib/url';
+import { useAppSelector } from '@/app/redux/hooks';
+import { RootState } from '@/app/store';
+import { toast } from 'sonner';
 
 type Job = {
     employer_id: string;
@@ -25,9 +29,12 @@ type Job = {
 export default function JobDetails() {
     const params = useParams();
     const id = params?.id as string;
-    const router = useRouter()
     const [job, setJob] = useState<Job | null>(null);
+    const user = useAppSelector((state: RootState) => state.auth.user)
+
     const [loading, setLoading] = useState(true);
+    const [isApplying, setIsApplying] = useState(false);
+    const [applied, setApplied] = useState(false);
 
     useEffect(() => {
         const fetchJob = async () => {
@@ -36,7 +43,7 @@ export default function JobDetails() {
                 const data = response.data;
 
                 const selectedJob = Array.isArray(data)
-                    ? data.find((job: any) => job.id.toString() === id)
+                    ? data.find((job) => job.id.toString() === id)
                     : data;
 
                 if (selectedJob) {
@@ -63,6 +70,33 @@ export default function JobDetails() {
             fetchJob();
         }
     }, [id]);
+
+    const handleApply = async () => {
+        try {
+            setIsApplying(true);
+            const response = await axios.post(`${url}/applications/apply`, {
+                jobseeker_id: user?.id,
+                job_id: id,
+                name: user?.full_name
+            });
+
+            if (response.data.success) {
+                setApplied(true);
+                toast.success("Application submitted successfully!");
+            } else {
+                toast.message(response.data.message);
+            }
+        } catch (error: any) {
+            if (error.response?.status === 409) {
+                toast.message("You've already applied for this job.");
+            } else {
+                toast.error("Error applying for job.");
+            }
+        } finally {
+            setIsApplying(false);
+        }
+    };
+
 
     const [isHovered, setIsHovered] = useState(false);
 
@@ -91,17 +125,6 @@ export default function JobDetails() {
     };
 
 
-    // const LoadingComponent = () => {
-    //     // Animation variants for the container
-    //     const containerVariants = {
-    //         animate: {
-    //             transition: {
-    //                 staggerChildren: 0.2,
-    //             },
-    //         },
-    //     };
-
-
     if (loading) return <div className="max-w-3xl mx-auto p-6 bg-white rounded-lg shadow-md flex flex-col items-center justify-center"
     >
         <motion.div
@@ -122,8 +145,6 @@ export default function JobDetails() {
     return (
 
         <>
-            {/* Logo animation */}
-
             <motion.div
                 className="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow-md border border-gray-100 mt-10 mb-10"
                 variants={cardVariants}
@@ -213,16 +234,24 @@ export default function JobDetails() {
 
                     <motion.div className="mt-8 text-center">
                         <motion.button
-                            onClick={() => alert(`Applying for job: ${job.title}`)}
+                            onClick={handleApply}
+                            onMouseEnter={() => setIsHovered(true)}
+                            onMouseLeave={() => setIsHovered(false)}
                             className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition cursor-pointer"
                             variants={buttonVariants}
                             whileHover="hover"
                             whileTap="tap"
                             initial="initial"
+                            disabled={isApplying || applied}
                         >
-                            {isHovered ? "Submit Application" : "Apply Now"}
+                            {applied
+                                ? "Application Submitted"
+                                : isHovered
+                                    ? "Submit Application"
+                                    : "Apply Now"}
                         </motion.button>
                     </motion.div>
+
                 </motion.div>
             </motion.div>
 

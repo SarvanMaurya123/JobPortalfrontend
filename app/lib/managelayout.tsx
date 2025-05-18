@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { isTokenExpired } from "./checkToken";
 import { logout } from "../store/slices/authSlice";
 
-
 export default function AuthChecker() {
     const dispatch = useAppDispatch();
     const router = useRouter();
@@ -17,10 +16,10 @@ export default function AuthChecker() {
 
         if (!token || isTokenExpired(token)) {
             dispatch(logout());
-            Cookies.remove("token"); // Optional, keep Redux & cookies in sync
+            Cookies.remove("token");
             router.push("/login");
         }
-    }, []);
+    }, [dispatch, router]);
 
-    return null; // This runs logic only, doesn't render anything
+    return null;
 }

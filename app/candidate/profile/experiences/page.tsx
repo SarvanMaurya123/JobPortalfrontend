@@ -8,7 +8,7 @@ import { RootState } from '@/app/store';
 import { toast } from 'sonner';
 import url from '@/app/lib/url';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Briefcase, Calendar, Plus, ChevronUp, ChevronDown, Delete } from 'lucide-react';
+import { Briefcase, Calendar, Plus, ChevronUp, Delete } from 'lucide-react';
 
 interface Experience {
   id: number;
@@ -44,7 +44,7 @@ const ExperienceForm: React.FC = () => {
         });
         setExperiences(res.data.data);
       } catch (error) {
-        toast.error('Failed to load experiences');
+        toast.error('Failed to load experiences' + error);
       }
     };
     fetchExperiences();
@@ -89,7 +89,7 @@ const ExperienceForm: React.FC = () => {
       });
       setExperiences(res.data.data);
     } catch (error) {
-      toast.error('Failed to add experience');
+      toast.error('Failed to add experience' + error);
     }
   };
 
@@ -102,7 +102,7 @@ const ExperienceForm: React.FC = () => {
       toast.success('Experience deleted');
       setExperiences(experiences.filter(exp => exp.id !== id));
     } catch (error) {
-      toast.error('Failed to delete experience');
+      toast.error('Failed to delete experience' + error);
     }
   };
 

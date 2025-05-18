@@ -225,7 +225,7 @@ const ContactForm = () => {
 
                     <motion.button
                         type="submit"
-                        className="w-full py-4 px-6 bg-green-500 text-white font-medium rounded-lg shadow-md"
+                        className="w-full py-4 px-6 bg-green-500 text-white font-medium rounded-lg shadow-md cursor-pointer"
                         variants={buttonVariants}
                         whileHover="hover"
                         whileTap="tap"

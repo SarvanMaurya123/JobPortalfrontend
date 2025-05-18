@@ -96,7 +96,6 @@ export default function JobBoard() {
     const [jobs, setJobs] = useState([]);
 
     const handleApply = (job: Job) => {
-        console.log(job.id);
         router.push(`/jobs/${job.id}`);
     };
 

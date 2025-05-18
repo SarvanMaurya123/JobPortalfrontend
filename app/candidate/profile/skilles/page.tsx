@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { Award, Clock, PlusCircle } from 'lucide-react'
+import { Award, PlusCircle } from 'lucide-react'
 import { useAppSelector } from '@/app/redux/hooks'
 import url from '@/app/lib/url'
 import { motion, AnimatePresence } from 'framer-motion';
@@ -49,7 +49,7 @@ const SkillSection = () => {
                     Authorization: `Bearer ${token}`,
                 },
             })
-            console.log(res.data)
+            //console.log(res.data)
             setSkills(res.data.data)
         } catch (err) {
             console.error('Error fetching skills:', err)

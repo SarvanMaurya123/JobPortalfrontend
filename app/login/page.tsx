@@ -53,7 +53,7 @@ export default function LoginForm() {
 
         try {
             // Try employer login
-            const empRes = await dispatch(
+            await dispatch(
                 employerLogin({
                     email: credentials.email,
                     password: credentials.password,
@@ -66,7 +66,7 @@ export default function LoginForm() {
             return;
         } catch (employerErr) {
             toast.error("Login failed. Please check your credentials.");
-            setError("Invalid email or password");
+            setError("Invalid email or password" + employerErr);
         } finally {
             setLoading(false);
         }
