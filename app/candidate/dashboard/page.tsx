@@ -123,7 +123,7 @@ export default function CandidateDashboard() {
             {/* Header */}
             <header className="mb-8">
                 <h1 className="text-3xl font-bold">Candidate Dashboard</h1>
-                <p className="text-gray-600">Welcome back,<span className='text-xl font-bold text-green-600'>{user?.full_name}!</span> {`Here's`} your job search overview.</p>
+                <p className="text-gray-600">Welcome back,<span className='text-xl font-bold text-green-600'>{user?.full_name}!</span></p>
             </header>
 
             {/* Stats */}

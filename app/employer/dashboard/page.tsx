@@ -1,14 +1,39 @@
 
 "use client"
+import urlemployer from '@/app/lib/employer';
 import { useAppSelector } from '@/app/redux/hooks';
 import { RootState } from '@/app/store';
+import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import AnalyticsDashboard from './lineandbargraph/page';
+
+type Job = {
+    id: number;
+    employer_id: number;
+    title: string;
+    company: string;
+    location: string;
+    employment_type: string;
+    experience_level: string;
+    salary: string;
+    description: string;
+    requirements: string;
+    benefits: string;
+    application_deadline: string;
+    contact_email: string;
+    created_at: string;
+    // Optional:
+    applicants?: number;
+    department?: string; // If added later
+};
+
 
 export default function EmployeeJobDashboard() {
     // Sample data - in a real application, this would come from an API or props
     const [activeTab, setActiveTab] = useState('posted');
+    const [postedJobs, setPostedJobs] = useState<Job[]>([]);
     const employer = useAppSelector((state: RootState) => state.authemployer.employer)
     const router = useRouter()
     const user = useAppSelector((state: RootState) => state.auth.user)
@@ -17,12 +42,28 @@ export default function EmployeeJobDashboard() {
         router.push("/")// redirect to login page
         return toast.message("this page is for employer only")
     }
-    const postedJobs = [
-        { id: 1, title: "Frontend Developer", applicants: 12, status: "Active", postedDate: "2025-03-28", location: "Remote", department: "Engineering", salary: "$90,000 - $120,000" },
-        { id: 2, title: "UI/UX Designer", applicants: 8, status: "Active", postedDate: "2025-03-25", location: "New York", department: "Design", salary: "$85,000 - $105,000" },
-        { id: 3, title: "Backend Engineer", applicants: 5, status: "Closed", postedDate: "2025-03-15", location: "San Francisco", department: "Engineering", salary: "$100,000 - $130,000" },
-        { id: 4, title: "Product Manager", applicants: 10, status: "Active", postedDate: "2025-03-30", location: "Chicago", department: "Product", salary: "$110,000 - $140,000" }
-    ];
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const res = await axios.get(`${urlemployer}/jobs/${employer?.id}`);
+                setPostedJobs(res.data);
+                console.log(res.data); // Handle your response data
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+
+    // const postedJobs = [
+    //     { id: 1, title: "Frontend Developer", applicants: 12, status: "Active", postedDate: "2025-03-28", location: "Remote", department: "Engineering", salary: "$90,000 - $120,000" },
+    //     { id: 2, title: "UI/UX Designer", applicants: 8, status: "Active", postedDate: "2025-03-25", location: "New York", department: "Design", salary: "$85,000 - $105,000" },
+    //     { id: 3, title: "Backend Engineer", applicants: 5, status: "Closed", postedDate: "2025-03-15", location: "San Francisco", department: "Engineering", salary: "$100,000 - $130,000" },
+    //     { id: 4, title: "Product Manager", applicants: 10, status: "Active", postedDate: "2025-03-30", location: "Chicago", department: "Product", salary: "$110,000 - $140,000" }
+    // ];
 
     const applicantStats = {
         totalApplications: 35,
@@ -187,9 +228,9 @@ export default function EmployeeJobDashboard() {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Job Title
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Department
-                                </th>
+                                </th> */}
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Location
                                 </th>
@@ -208,37 +249,48 @@ export default function EmployeeJobDashboard() {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {postedJobs.map(job => (
-                                <tr key={job.id}>
+                            {postedJobs.map((job, index) => (
+                                <tr key={index}>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm font-medium text-gray-900">{job.title}</div>
                                         <div className="text-xs text-gray-500">{job.salary}</div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {job.department}
-                                    </td>
+
+
+
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {job.location}
                                     </td>
+
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${job.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${job.application_deadline && new Date(job.application_deadline) > new Date()
+                                            ? 'bg-green-100 text-green-800'
+                                            : 'bg-gray-100 text-gray-800'
                                             }`}>
-                                            {job.status}
+                                            {/* Show Active/Expired based on deadline */}
+                                            {job.application_deadline && new Date(job.application_deadline) > new Date()
+                                                ? 'Active'
+                                                : 'Closed'}
                                         </span>
                                     </td>
+
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {job.postedDate}
+                                        {new Date(job.created_at).toLocaleDateString()}
                                     </td>
+
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {job.applicants}
+                                        {/* Placeholder until you count applicants */}
+                                        {job.applicants || 0}
                                     </td>
+
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button className="text-blue-600 hover:text-blue-900 mr-3">View</button>
-                                        <button className="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
-                                        <button className="text-red-600 hover:text-red-900">Delete</button>
+                                        <button className="text-blue-600 hover:text-blue-900 mr-3 cursor-pointer">View</button>
+                                        <button className="text-blue-600 hover:text-blue-900 mr-3 cursor-pointer">Edit</button>
+                                        <button className="text-red-600 hover:text-red-900 cursor-pointer">Delete</button>
                                     </td>
                                 </tr>
                             ))}
+
                         </tbody>
                     </table>
                     <div className="px-6 py-4 flex items-center justify-between border-t border-gray-200">
@@ -376,76 +428,7 @@ export default function EmployeeJobDashboard() {
             )}
 
             {activeTab === 'analytics' && (
-                <div className="bg-white rounded-lg shadow p-6">
-                    <h2 className="text-lg font-medium mb-4">Job Performance Analytics</h2>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div className="border border-gray-200 rounded-lg p-4">
-                            <h3 className="text-sm font-medium text-gray-500 mb-2">Applications by Department</h3>
-                            <div className="h-48 bg-gray-100 rounded-lg flex items-center justify-center">
-                                <p className="text-gray-500">Chart: Applications by Department</p>
-                            </div>
-                        </div>
-                        <div className="border border-gray-200 rounded-lg p-4">
-                            <h3 className="text-sm font-medium text-gray-500 mb-2">Time to Hire (Days)</h3>
-                            <div className="h-48 bg-gray-100 rounded-lg flex items-center justify-center">
-                                <p className="text-gray-500">Chart: Time to Hire Trends</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="border border-gray-200 rounded-lg p-4">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-sm font-medium text-gray-500">Job Posting Performance</h3>
-                            <select className="border border-gray-300 rounded-md px-2 py-1 text-xs">
-                                <option>Last 30 days</option>
-                                <option>Last 90 days</option>
-                                <option>This Year</option>
-                            </select>
-                        </div>
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job Title</th>
-                                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views</th>
-                                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applications</th>
-                                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Conversion Rate</th>
-                                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time to Fill</th>
-                                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost per Hire</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    <tr>
-                                        <td className="px-3 py-2 whitespace-nowrap text-sm">Frontend Developer</td>
-                                        <td className="px-3 py-2 whitespace-nowrap text-sm">245</td>
-                                        <td className="px-3 py-2 whitespace-nowrap text-sm">12</td>
-                                        <td className="px-3 py-2 whitespace-nowrap text-sm">4.9%</td>
-                                        <td className="px-3 py-2 whitespace-nowrap text-sm">12 days</td>
-                                        <td className="px-3 py-2 whitespace-nowrap text-sm">$420</td>
-                                    </tr>
-                                    <tr>
-                                        <td className="px-3 py-2 whitespace-nowrap text-sm">UI/UX Designer</td>
-                                        <td className="px-3 py-2 whitespace-nowrap text-sm">198</td>
-                                        <td className="px-3 py-2 whitespace-nowrap text-sm">8</td>
-                                        <td className="px-3 py-2 whitespace-nowrap text-sm">4.0%</td>
-                                        <td className="px-3 py-2 whitespace-nowrap text-sm">14 days</td>
-                                        <td className="px-3 py-2 whitespace-nowrap text-sm">$380</td>
-                                    </tr>
-                                    <tr>
-                                        <td className="px-3 py-2 whitespace-nowrap text-sm">Product Manager</td>
-                                        <td className="px-3 py-2 whitespace-nowrap text-sm">324</td>
-                                        <td className="px-3 py-2 whitespace-nowrap text-sm">10</td>
-                                        <td className="px-3 py-2 whitespace-nowrap text-sm">3.1%</td>
-                                        <td className="px-3 py-2 whitespace-nowrap text-sm">21 days</td>
-                                        <td className="px-3 py-2 whitespace-nowrap text-sm">$650</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
+                <AnalyticsDashboard />
 
             )
             }
